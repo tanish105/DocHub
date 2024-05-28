@@ -30,14 +30,14 @@ def input_image(uploaded_file):
         raise FileNotFoundError("No file uploaded")
 
 #initialize the streamlit app
-st.set_page_config(page_title="Gemini Image demo", page_icon="🌌", layout="wide")
+st.set_page_config(page_title="DocHub", page_icon="🌌", layout="wide")
 st.header("Invoice Extractor")
-input = st.text_input("Input prompt:",key = "input")
+input = st.text_input("Enter the details you want from the invoice",key = "input")
 uploaded_file = st.file_uploader("Choose an image of the invoice...", type=["jpg","jpeg","png"])
 image=""
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image.', use_column_width=True)
+    st.image(image, caption='Uploaded Invoice.', use_column_width=True)
 
 submit = st.button("submit")
 
