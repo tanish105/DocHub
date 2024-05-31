@@ -1,4 +1,6 @@
 from json import load
+
+from requests import session
 import streamlit as st
 import pymongo
 from pymongo.server_api import ServerApi
@@ -16,6 +18,14 @@ client = pymongo.MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client.get_database('dochub')
 users_collection = db.get_collection('users')
 
+#managing session state
+if 'username' not in st.session_state:
+    st.session_state['username'] = ''
+if 'email' not in st.session_state:
+    st.session_state['email'] = ''
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
 def add_user(email, username, password):
     user_data = {
         'email':email,
@@ -26,27 +36,38 @@ def add_user(email, username, password):
 
 def find_user(username, password):
     user_data = users_collection.find_one({'username':username, 'password':password})
+    st.session_state['username'] = user_data['username']
+    st.session_state['email'] = user_data['email']
+    st.session_state['logged_in'] = True
     return user_data
 
 def app():
     
     st.title('Welcome to :violet[DocHub] 📃')
-     
-    choice = st.selectbox("Login/SignUp", ["Login", "SignUp"])
-    if choice == "Login":
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            user_data = find_user(username, password)
-            if user_data:
-                st.success("You have successfully logged in!")
-                st.balloons()
-            else:
-                st.warning("Invalid Username/Password")
+    if st.session_state['logged_in']:
+        st.text(f"Logged in as {st.session_state['username']}")
+        st.text(f"Email: {st.session_state['email']}")
+        if st.button("Sign Out"):
+            st.session_state['logged_in'] = False
+            st.session_state['username'] = ''
+            st.session_state['email'] = ''
+            st.success("You have successfully logged out.")
     else:
-        email = st.text_input("Email")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Sign Up"):
-            add_user(email, username, password)
-            st.success("You have successfully signed up!")
+        choice = st.selectbox("Login/SignUp", ["Login", "SignUp"])
+        if choice == "Login":
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            if st.button("Login"):
+                user_data = find_user(username, password)
+                if user_data:
+                    st.success("You have successfully logged in!")
+                    st.balloons()
+                else:
+                    st.warning("Invalid Username/Password")
+        else:
+            email = st.text_input("Email")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            if st.button("Sign Up"):
+                add_user(email, username, password)
+                st.success("You have successfully signed up!")

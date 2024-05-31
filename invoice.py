@@ -1,8 +1,27 @@
 import os
 from PIL import Image
+from account import MONGO_HOST, MONGO_URI, MONGO_USER
 import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
+import pymongo
+from pymongo.server_api import ServerApi
+
+load_dotenv()
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_USER = quote_plus(os.getenv("MONGO_USER"))
+MONGO_PASS = quote_plus(os.getenv("MONGO_PASS"))
+MONGO_URI = f"mongodb+srv://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}/?retryWrites=true&w=majority"
+
+client = pymongo.MongoClient(MONGO_URI, server_api=ServerApi('1'))
+database = client.get_database('dochub')
+collection = database.get_collection('invoices')
+
+def add_invoices(uploaded_file,text,response):
+    if uploaded_file is not None:
+        collection.insert_one({"image": uploaded_file.getvalue(),"query":text,"response":response})
+        st.success("Invoice uploaded successfully")
 
 def app():
     load_dotenv()
@@ -29,7 +48,7 @@ def app():
             raise FileNotFoundError("No file uploaded")
 
     # Initialize the streamlit app
-    st.header("Invoice Extractor")
+    st.header("Invoice Extractor") 
     input = st.text_input("Enter the details you want from the invoice", key="input")
     uploaded_file = st.file_uploader("Choose an image of the invoice...", type=["jpg", "jpeg", "png"])
     image = ""
@@ -47,7 +66,8 @@ def app():
     # If submit is clicked
     if submit:
         image_data = input_image(uploaded_file)
-        response = get_gemini_response(input, image_data, input)
+        response = get_gemini_response(input, image_data, input_prompt)
+        add_invoices(uploaded_file,input,response)
         st.subheader("The response is")
         st.write(response)
 
