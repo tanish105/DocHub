@@ -18,14 +18,6 @@ client = pymongo.MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client.get_database('dochub')
 users_collection = db.get_collection('users')
 
-#managing session state
-if 'username' not in st.session_state:
-    st.session_state['username'] = ''
-if 'email' not in st.session_state:
-    st.session_state['email'] = ''
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
 def add_user(email, username, password):
     user_data = {
         'email':email,
@@ -42,7 +34,13 @@ def find_user(username, password):
     return user_data
 
 def app():
-    
+    #managing session state
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ''
+    if 'email' not in st.session_state:
+        st.session_state['email'] = ''
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
     st.title('Welcome to :violet[DocHub] 📃')
     if st.session_state['logged_in']:
         st.text(f"Logged in as {st.session_state['username']}")
