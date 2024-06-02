@@ -1,8 +1,26 @@
+from urllib.parse import quote_plus
 import streamlit as st
 from dotenv import load_dotenv
 import os
 import google.generativeai as genai
 import PyPDF2 as pdf
+import pymongo
+from pymongo.server_api import ServerApi
+
+load_dotenv()
+MONGO_USER = quote_plus(os.getenv("MONGO_USER"))
+MONGO_PASS = quote_plus(os.getenv("MONGO_PASS"))
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_URI = f"mongodb+srv://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}/?retryWrites=true&w=majority"
+
+client = pymongo.MongoClient(MONGO_URI, server_api=ServerApi('1'))
+db = client.get_database('dochub')
+resume_collection = db.get_collection('resume')
+
+def add_resume(uploaded_file, text, response):
+    if uploaded_file is not None:
+        resume_collection.insert_one({"resume": uploaded_file.getvalue(), "query": text, "response": response})
+        st.success("Resume stored successfully")
 
 def app():
     # Load environment variables
@@ -54,6 +72,7 @@ def app():
             resume_text = pdf_text(uploaded_file)
             prompt = input_prompt.format(resume_text=resume_text, jd=jd)
             response = get_response(prompt)
+            add_resume(uploaded_file, jd, response)
             st.subheader("Analysis Result")
             st.code(response, language='json')
         else:
